@@ -1,7 +1,14 @@
 from quadrature import LevelSymmetricQuadrature
+from convergence import ConvergenceTest
+
 
 class SN(object):
-    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod):
+    """
+    Need to:
+    - add iteration to convergence for solveSN
+    - import L2 convergence check class
+    """
+    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol):
         self.quadrature = LevelSymmetricQuadrature().getQuadrature(order)
         self.n_angles = self.quadrature['n_angles']
         self.cells = cells
@@ -9,12 +16,14 @@ class SN(object):
         self.n_cells = num_cells
         self.n_fuel = num_fuel
         self.n_mod = num_mod
+        self.tol = tol
 
     def solveSN(self):
-        for angles in range(self.n_angles/4):
+        check = ConvergenceTest()
+        converged = False
+        scalar_flux_old = [0,0]
 
-            eta = self.quadrature['eta'][angles]
-            xi = self.quadrature['xi'][angles]
+        while not converged:
 
             #sweeps across y cells for given x, over all x cells
 
@@ -23,55 +32,63 @@ class SN(object):
             for i in range(self.n_cells):
                 for j in range(self.n_cells):
                     cell = self.cells[i][j]
-                    avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs,
-                                              cell.angular[0], cell.angular[1])
-                   # print "avg flux for cell %d, %d = %f" % (i, j, avg)
+                    for angles in range(self.n_angles / 4):
+                        eta = self.quadrature['eta'][angles]
+                        xi = self.quadrature['xi'][angles]
 
-                    # set right flux out (i+i cell left flux in)
-                    cell.angular[2] = self.getAngFluxOut(avg, cell.angular[0])
-                    if i < self.n_cells-1:
-                        self.cells[i+1][j].angular[0] = cell.angular[2]
+                        avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[0], cell.angular[1])
 
-                    # set top flux out (j+1 cell bottom flux in)
-                    cell.angular[3] = self.getAngFluxOut(avg, cell.angular[1])
-                    if j < self.n_cells - 1:
-                        self.cells[i][j+1].angular[1] = cell.angular[3]
+                        # set right flux out (i+i cell left flux in)
+                        cell.angular[2] = self.getAngFluxOut(avg, cell.angular[0])
+                        if i < self.n_cells-1:
+                            self.cells[i+1][j].angular[0] = cell.angular[2]
+
+                        # set top flux out (j+1 cell bottom flux in)
+                        cell.angular[3] = self.getAngFluxOut(avg, cell.angular[1])
+                        if j < self.n_cells - 1:
+                            self.cells[i][j+1].angular[1] = cell.angular[3]
 
             #sweep starting from bottom right
             print "Sweeping from bottom right..."
             for i in reversed(range(self.n_cells)):
                 for j in range(self.n_cells):
                     cell = self.cells[i][j]
-                    avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs,
-                                              cell.angular[2], cell.angular[1])
+                    for angles in range(self.n_angles / 4):
+                        eta = self.quadrature['eta'][angles]
+                        xi = self.quadrature['xi'][angles]
 
-                    # set left flux out (i-1 cell right flux in)
-                    cell.angular[0] = self.getAngFluxOut(avg, cell.angular[2])
-                    if i > self.n_cells+1:
-                        self.cells[i-1][j].angular[2] = cell.angular[0]
+                        avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[2], cell.angular[1])
 
-                    # set top flux out (j+1 cell bottom flux in)
-                    cell.angular[3] = self.getAngFluxOut(avg, cell.angular[1])
-                    if j < self.n_cells - 1:
-                        self.cells[i][j + 1].angular[1] = cell.angular[3]
+                        # set left flux out (i-1 cell right flux in)
+                        cell.angular[0] = self.getAngFluxOut(avg, cell.angular[2])
+                        if i > self.n_cells+1:
+                            self.cells[i-1][j].angular[2] = cell.angular[0]
+
+                        # set top flux out (j+1 cell bottom flux in)
+                        cell.angular[3] = self.getAngFluxOut(avg, cell.angular[1])
+                        if j < self.n_cells - 1:
+                            self.cells[i][j + 1].angular[1] = cell.angular[3]
 
             #sweep from top right
             print "Sweeping from top right..."
             for i in reversed(range(self.n_cells)):
                 for j in reversed(range(self.n_cells)):
                     cell = self.cells[i][j]
-                    avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs,
-                                              cell.angular[2], cell.angular[3])
+                    for angles in range(self.n_angles / 4):
+                        eta = self.quadrature['eta'][angles]
+                        xi = self.quadrature['xi'][angles]
 
-                    # set left flux out (i-1 cell right flux in)
-                    cell.angular[0] = self.getAngFluxOut(avg, cell.angular[2])
-                    if i >= 1:
-                        self.cells[i-1][j].angular[2] = cell.angular[0]
+                        avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[2], cell.angular[3])
 
-                    # set bottom flux out (j-1 cell top flux in)
-                    cell.angular[1] = self.getAngFluxOut(avg, cell.angular[3])
-                    if j >= 1:
-                        self.cells[i][j-1].angular[3] = cell.angular[1]
+                        # set left flux out (i-1 cell right flux in)
+                        cell.angular[0] = self.getAngFluxOut(avg, cell.angular[2])
+                        if i >= 1:
+                            self.cells[i-1][j].angular[2] = cell.angular[0]
+
+                        # set bottom flux out (j-1 cell top flux in)
+                        cell.angular[1] = self.getAngFluxOut(avg, cell.angular[3])
+                        if j >= 1:
+                            self.cells[i][j-1].angular[3] = cell.angular[1]
 
 
             #sweep from top left
@@ -79,18 +96,22 @@ class SN(object):
             for i in range(self.n_cells):
                 for j in reversed(range(self.n_cells)):
                     cell = self.cells[i][j]
-                    avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs,
-                                              cell.angular[0], cell.angular[3])
+                    for angles in range(self.n_angles / 4):
 
-                    # set right flux out (i+i cell left flux in)
-                    cell.angular[2] = self.getAngFluxOut(avg, cell.angular[0])
-                    if i < self.n_cells-1:
-                        self.cells[i+1][j].angular[0] = cell.angular[2]
+                        eta = self.quadrature['eta'][angles]
+                        xi = self.quadrature['xi'][angles]
 
-                    # set bottom flux out (j-1 cell top flux in)
-                    cell.angular[1] = self.getAngFluxOut(avg, cell.angular[3])
-                    if j >= 1:
-                        self.cells[i][j - 1].angular[3] = cell.angular[1]
+                        avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[0], cell.angular[3])
+
+                        # set right flux out (i+i cell left flux in)
+                        cell.angular[2] = self.getAngFluxOut(avg, cell.angular[0])
+                        if i < self.n_cells-1:
+                            self.cells[i+1][j].angular[0] = cell.angular[2]
+
+                        # set bottom flux out (j-1 cell top flux in)
+                        cell.angular[1] = self.getAngFluxOut(avg, cell.angular[3])
+                        if j >= 1:
+                            self.cells[i][j - 1].angular[3] = cell.angular[1]
 
             #update scalar flux for each cell, then zero angular fluxes
 
@@ -101,6 +122,12 @@ class SN(object):
                     print(cell.flux)
                     for m in range(4):
                         cell.angular[m] = 0
+            scalar_flux = self.getAvgScalarFlux()
+
+            converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
+            if not converged:
+                scalar_flux_old = self.getAvgScalarFlux()
+
 
     def getCellAvgFlux(self, q, eta, xi, sigma, psi_h, psi_v):
         delta = self.d_cell

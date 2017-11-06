@@ -12,6 +12,9 @@ sigma_mod = 0       #moderator macro XS
 #Sn order
 order = 4
 
+#convergence tolerance
+tol = 1e-3
+
 #set material objects
 fuel = geometry.Material('fuel', q_fuel, sigma_fuel)
 moderator = geometry.Material('moderator', q_mod, sigma_mod)
@@ -21,7 +24,7 @@ mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
 mesh.setMesh()
 
 #give order, mesh to solver
-solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod)
+solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol)
 solve.solveSN()
 solve.getAvgScalarFlux()
 
