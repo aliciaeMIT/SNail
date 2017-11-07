@@ -10,6 +10,8 @@ class Geometry(object):
         self.fw = fuel_width
         self.fuel = fuel
         self.moderator = moderator
+        self.fuel_area = fuel_width ** 2
+        self.mod_area = pitch ** 2 - fuel_width ** 2
 
     def setMesh(self):
         self.n_cells = int(self.width / self.mesh) #number of cells in x, y
@@ -28,10 +30,10 @@ class Geometry(object):
                         ((i <= (self.n_mod + self.n_fuel) and j <= (self.n_mod + self.n_fuel))):
                     cell.region = 'fuel'
                     cell.getMaterial(self.fuel)
-                    print "set cell %d, %d to %s " % (i, j, cell.region)
+                    #print "set cell %d, %d to %s " % (i, j, cell.region)
                 else:
                     cell.getMaterial(self.moderator)
-                    print "set cell %d, %d to %s " % (i, j, cell.region)
+                    #print "set cell %d, %d to %s " % (i, j, cell.region)
 
 
 class Cell(object):
@@ -39,7 +41,7 @@ class Cell(object):
 
         self.region = 'moderator'
         self.flux = 0
-        self.angular = np.zeros(4)
+        self.angular = np.zeros((4, 100))
 
     def getMaterial(self, material):
         self.material = material

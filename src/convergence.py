@@ -16,8 +16,8 @@ class ConvergenceTest(object):
         l2 = math.sqrt(sum1 / I)
 
         if l2 < epsilon:
-            print "Converged! l2 %g" %(l2)
+            print "Converged! l2 %g\n" %(l2)
             return True
         else:
-            print "Not converged; l2 %g" %(l2)
+            print "Not converged; l2 %g\n" %(l2)
             return False
