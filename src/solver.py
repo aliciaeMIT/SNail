@@ -6,6 +6,7 @@ class SN(object):
 
     def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol, fuel_area, mod_area):
         self.quadrature = LevelSymmetricQuadrature().getQuadrature(order)
+        self.order = order
         self.n_angles = self.quadrature['n_angles']
         self.cells = cells
         self.d_cell = mesh_spacing
@@ -15,8 +16,10 @@ class SN(object):
         self.tol = tol
         self.fuel_area = fuel_area
         self.mod_area = mod_area
+        self.results = 0
 
-    def solveSN(self, max_iters):
+
+    def solveSN(self, max_iters, plotter, mesh):
         check = ConvergenceTest()
         converged = False
         scalar_flux_old = [0,0]
@@ -39,6 +42,9 @@ class SN(object):
                         #angles from [0, n_ang/4]
                         eta = self.quadrature['eta'][angles]
                         xi = self.quadrature['xi'][angles]
+
+                        if cell.region == 'fuel':
+                            pass
 
                         avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[0][angles], cell.angular[1][angles])
 
@@ -129,9 +135,15 @@ class SN(object):
                         cell.flux += self.quadrature['weight'][angles] * \
                                  (cell.angular[0][angles] + cell.angular[2][angles]) / 2
 
-            scalar_flux = self.getAvgScalarFlux()
+            getfluxes = self.getAvgScalarFlux()
+            scalar_flux = getfluxes[:2]
+            #scalar_flux = self.getAvgScalarFlux()
+
+            print "plotting scalar flux for iteration %d" % (iters)
+            plotter.plotScalarFlux(mesh, self.order, self.d_cell, iters)
 
             converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
+
             if not converged:
                 scalar_flux_old = scalar_flux[:]#self.getAvgScalarFlux()
 
@@ -142,7 +154,8 @@ class SN(object):
                     converged = True
                     print "Not converged after %d iterations." %(iters)
             else:
-                print "Converged in %d iterations" %(iters)
+                print "Converged in %d iterations\n" %(iters)
+                self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
 
 
     def getCellAvgFlux(self, q, eta, xi, sigma, psi_h, psi_v):
@@ -159,22 +172,35 @@ class SN(object):
     def getAvgScalarFlux(self):
         fuelflux = 0.0
         modflux = 0.0
+        scalarflux = 0.0
 
         for i in range(self.n_cells):
             for cell in self.cells[i]:
-                if cell.region == 'fuel':
-                    #accumulate scalar flux avg for fuel
-                    fuelflux += cell.flux
-                else:
-                    #accumulate scalar flux avg for mod
-                    modflux += cell.flux
-        #ratio = (fuelflux / self.n_fuel) / (modflux/self.n_mod)
-        avgflux = (fuelflux + modflux) / self.n_cells
+               scalarflux += cell.flux
+        #avgflux = (fuelflux + modflux) / self.n_cells
+        avgflux = scalarflux / self.n_cells
 
         #normalize flux
         for i in range(self.n_cells):
             for cell in self.cells[i]:
                 cell.flux /= avgflux
+                if cell.region == 'fuel':
+                    # accumulate scalar flux avg for fuel
+                    fuelflux += cell.flux
+                else:
+                    # accumulate scalar flux avg for mod
+                    modflux += cell.flux
+
+        """
+        for i in range(self.n_cells):
+            for cell in self.cells[i]:
+                if cell.region == 'fuel':
+                    # accumulate scalar flux avg for fuel
+                    fuelflux += cell.flux
+                else:
+                    # accumulate scalar flux avg for mod
+                    modflux += cell.flux
+        """
 
         #fuelflux /= self.fuel_area
         fuelflux /= self.n_fuel
@@ -183,4 +209,9 @@ class SN(object):
         ratio = fuelflux / modflux
 
         print "Avg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f" %(fuelflux, modflux, avgflux, ratio)
-        return fuelflux, modflux
+        return fuelflux, modflux, avgflux, ratio
+
+    def returnSolveResults(self, iters, fuelflux, modflux, avgflux, ratio):
+       # print "Iterations to convergence: %d \nModerator flux: %g\nFuel flux: %g\n Avg flux: %g\n Flux ratio: %g" \
+        #      %(iters, modflux, fuelflux, avgflux, ratio)
+        return iters, fuelflux, modflux, avgflux, ratio
