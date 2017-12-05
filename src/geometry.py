@@ -46,13 +46,15 @@ class Cell(object):
         self.region = 'moderator'
         self.flux = 0
         self.angular = np.zeros((4, 100))
+        self.source = 0
 
     def getMaterial(self, material):
         self.material = material
 
 class Material(object):
-    def __init__(self, region, q, xs):
+    def __init__(self, region, q, xs, scatter):
 
         self.name = region
         self.q = q
-        self.xs = xs
+        self.xs = xs #total xs
+        self.scatter = scatter

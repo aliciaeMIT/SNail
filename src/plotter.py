@@ -6,13 +6,13 @@ from math import *
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plotCenterFlux(mesh, solved, j, iter):
+def plotCenterFlux(mesh, solved, j, iter, order):
     ivals = []
     cellfluxes = []
-    fuelbounds = [mesh.n_mod, (mesh.n_fuel + mesh.n_mod)]
+    fuelbounds = [(mesh.n_mod-0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
 
     #comment out next line to plot all iterations on same plot
-    plt.figure()
+    plt.figure(1)
     for xc in fuelbounds:
         plt.axvline(x=xc, color='k', linestyle = '--')
 
@@ -20,15 +20,19 @@ def plotCenterFlux(mesh, solved, j, iter):
         ivals.append(i)
         cellfluxes.append(solved[i][j].flux)
     plt.plot(ivals, cellfluxes)
+    plt.ylabel('Scalar Flux')
+    plt.xlabel('X node # across centerline (Y node num ' + str(j) + ' )')
+    plt.title('Horizontal centerline flux, iteration ' + str(iter) + ', order ' + str(order))
     plt.savefig('horiz_iter' + str(iter) + '_flux_center.png')
 
-def plotCenterFluxY(mesh, solved, i, iter):
+def plotCenterFluxY(mesh, solved, i, iter, order):
     jvals = []
     cellfluxes = []
-    fuelbounds = [mesh.n_mod, (mesh.n_fuel + mesh.n_mod)]
+    fuelbounds = [(mesh.n_mod - 0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
+    #0.5 is subtracted to account for boundary being between cells for fuel and mod indices
 
     #comment out next line to plot all iterations on same plot
-    plt.figure()
+    plt.figure(2)
     for xc in fuelbounds:
         plt.axvline(x=xc, color='k', linestyle = '--')
 
@@ -36,7 +40,11 @@ def plotCenterFluxY(mesh, solved, i, iter):
         jvals.append(j)
         cellfluxes.append(solved[i][j].flux)
     plt.plot(jvals, cellfluxes)
+    plt.ylabel('Scalar Flux')
+    plt.xlabel('Y node # across centerline (X node num ' + str(i) + ' )')
+    plt.title('Vertical centerline flux, iteration ' + str(iter) + ', order ' + str(order))
     plt.savefig('vert_iter' + str(iter) + '_flux_center.png')
+
 def plotMaterial(mesh, spacing, plot_cells):
 
 

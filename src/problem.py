@@ -9,7 +9,7 @@ from math import pi
 #########################################
 pitch = 1.26
 fwidth = 0.7                                #fuel width/height
-q_fuel = 1.0 / (4 * pi )                       #fuel source
+q_fuel = 10 / (4 * pi )                       #fuel source
 q_mod = 0.0                                  #moderator source
 
 
@@ -44,15 +44,16 @@ xs_absorption_h = 1.0
 barns = 1e-24 #cm; conversion factor
 
 sigma_fuel = (xs_scatter_238 + 2 * xs_scatter_o) * num_density_uo2 * barns                             #fuel macro XS
-sigma_mod = (2 * xs_absorption_h + xs_scatter_o + 2 * xs_absorption_h) * num_density_h2o * barns       #moderator macro XS
+sigma_mod = (2 * xs_absorption_h + xs_scatter_o + 2 * xs_scatter_h) * num_density_h2o * barns       #moderator macro XS
+sigma_mod_scatter = (xs_scatter_o + 2 * xs_scatter_h) * num_density_h2o * barns
 
 
 #########################################
 ############## SETUP SOLVE ##############
 #########################################
 #set material objects
-fuel = geometry.Material('fuel', q_fuel, sigma_fuel)
-moderator = geometry.Material('moderator', q_mod, sigma_mod)
+fuel = geometry.Material('fuel', q_fuel, sigma_fuel, sigma_fuel)
+moderator = geometry.Material('moderator', q_mod, sigma_mod, sigma_mod_scatter)
 
 
 #Sn order
@@ -66,7 +67,7 @@ manyorders = False
 
 if manyspacings:
     print "Iterating over spacings....\n\n"
-    order = 8
+    order = 4
     i=0
     sptol = 0.1
     rat_old = 0
