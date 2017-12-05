@@ -15,7 +15,7 @@ q_mod = 0.0                                  #moderator source
 
 
 #convergence tolerance
-tol = 1e-5
+tol = 1e-3
 max_iters = 50
 
 #########################################
@@ -66,13 +66,13 @@ manyorders = False
 
 if manyspacings:
     print "Iterating over spacings....\n\n"
-    order = 4
+    order = 8
     i=0
-    sptol = 0.001
+    sptol = 0.1
     rat_old = 0
     for spacing in spacings:
     #for order in orders:
-        print "\nSolving SN, order %d, spacing %g" %(order, spacing)
+        print "\nSolving SN, order %d, spacing %g" % (order, spacing)
         #setup mesh cells
         mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
         mesh.setMesh()
@@ -86,6 +86,7 @@ if manyspacings:
                   int((cell_width / 2.0) * cell_width + cell_width / 2.0) + fuel_width / 2 - 1,
                   int((cell_width / 2.0 + 1) * cell_width - 1)]
         plotter.plotMaterial(mesh, spacing, plot_cells)
+
         #give order, mesh to solver
         solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area, mesh.mod_area)
         solve.solveSN(max_iters, plotter, mesh)

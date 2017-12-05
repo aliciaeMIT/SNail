@@ -43,8 +43,6 @@ class SN(object):
                         eta = self.quadrature['eta'][angles]
                         xi = self.quadrature['xi'][angles]
 
-                        if cell.region == 'fuel':
-                            pass
 
                         avg = self.getCellAvgFlux(cell.material.q, eta, xi, cell.material.xs, cell.angular[0][angles], cell.angular[1][angles])
 
@@ -139,8 +137,10 @@ class SN(object):
             scalar_flux = getfluxes[:2]
             #scalar_flux = self.getAvgScalarFlux()
 
-            print "plotting scalar flux for iteration %d" % (iters)
-            plotter.plotScalarFlux(mesh, self.order, self.d_cell, iters)
+            #print "plotting scalar flux for iteration %d" % (iters)
+            #plotter.plotScalarFlux(mesh, self.order, self.d_cell, iters)
+            plotter.plotCenterFlux(mesh, self.cells, 125, iters)
+            plotter.plotCenterFluxY(mesh, self.cells, 125, iters)
 
             converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
 
@@ -179,11 +179,14 @@ class SN(object):
                scalarflux += cell.flux
         #avgflux = (fuelflux + modflux) / self.n_cells
         avgflux = scalarflux / self.n_cells
+        maxflux = 0.0
 
         #normalize flux
         for i in range(self.n_cells):
             for cell in self.cells[i]:
-                cell.flux /= avgflux
+                #cell.flux /= avgflux
+                if cell.flux > maxflux:
+                    maxflux = cell.flux
                 if cell.region == 'fuel':
                     # accumulate scalar flux avg for fuel
                     fuelflux += cell.flux
@@ -204,8 +207,10 @@ class SN(object):
 
         #fuelflux /= self.fuel_area
         fuelflux /= self.n_fuel
+        #fuelflux /= maxflux
         #modflux /= self.mod_area
         modflux /= self.n_mod
+        #modflux /= maxflux
         ratio = fuelflux / modflux
 
         print "Avg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f" %(fuelflux, modflux, avgflux, ratio)
