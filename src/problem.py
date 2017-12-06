@@ -67,7 +67,7 @@ manyorders = False
 
 
 #create directory to store plots in
-timestr = time.strftime("%Y-%m-%d_%H-%M")
+timestr = 'plots/' + time.strftime("%Y-%m-%d_%H-%M")
 plotter.mkdir_p(timestr)
 savepath = timestr
 

@@ -87,7 +87,7 @@ class SN(object):
 
             for i in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[i][j].angular[3][angles + na_oct*3] = self.cells[i][j].angular[3][angles]
+                    self.cells[i][j].angular[3][angles + na_oct] = self.cells[i][j].angular[3][angles]
 
             #sweep from top right
             for i in reversed(range(self.n_cells)):
@@ -182,7 +182,7 @@ class SN(object):
                         # set top flux out (j+1 cell bottom flux in)
                         cell.angular[3][angles] = self.getAngFluxOut(avg, cell.angular[1][angles])
                         if j < self.n_cells - 1:
-                            self.cells[i][j + 1].angular[1][angles+na_oct] = cell.angular[3][angles+na_oct]
+                            self.cells[i][j + 1].angular[1][angles] = cell.angular[3][angles]
 
             # reflect on left, top boundaries
             i = 0
@@ -192,7 +192,7 @@ class SN(object):
 
             for i in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[i][j].angular[3][angles + na_oct * 2] = self.cells[i][j].angular[3][angles + na_oct]
+                    self.cells[i][j].angular[3][angles + na_oct] = self.cells[i][j].angular[3][angles + na_oct]
 
             #update scalar flux for each cell
 
