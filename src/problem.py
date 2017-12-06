@@ -58,7 +58,7 @@ moderator = geometry.Material('moderator', q_mod, sigma_mod, sigma_mod_scatter)
 
 #Sn order
 orders = [2, 4, 8]
-spacings = [0.01]  #mesh spacing
+spacings = [0.005]  #mesh spacing
 results = []
 
 manyspacings = True
