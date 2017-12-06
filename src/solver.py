@@ -100,17 +100,18 @@ class SN(object):
                         eta = self.quadrature['eta'][angles]
                         xi = self.quadrature['xi'][angles]
                         # angles from [n/2 , 3/4n]
-                        angles += na_oct
 
-                        cell.avg_angular[angles+na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles], cell.angular[3][angles])
+
+                        cell.avg_angular[angles+2*na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs,
+                                                                                cell.angular[2][angles], cell.angular[3][angles])
 
                         # set left flux out (i-1 cell right flux in)
-                        cell.angular[0][angles] = self.getAngFluxOut(cell.avg_angular[angles+na_oct], cell.angular[2][angles])
+                        cell.angular[0][angles] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[2][angles])
                         if i >= 1:
                             self.cells[i-1][j].angular[2][angles] = cell.angular[0][angles]
 
                         # set bottom flux out (j-1 cell top flux in)
-                        cell.angular[1][angles] = self.getAngFluxOut(cell.avg_angular[angles+na_oct], cell.angular[3][angles])
+                        cell.angular[1][angles] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[3][angles])
                         if j >= 1:
                             self.cells[i][j-1].angular[3][angles] = cell.angular[1][angles]
 
@@ -119,13 +120,39 @@ class SN(object):
             i = 0
             for j in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[0][j].angular[0][angles+na_oct] = self.cells[0][j].angular[0][angles]
+                    self.cells[0][j].angular[0][angles + na_oct] = self.cells[0][j].angular[0][angles]
 
             j = 0
             for i in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[i][0].angular[1][angles+na_oct] = self.cells[i][0].angular[1][angles]
+                    self.cells[i][0].angular[1][angles + na_oct] = self.cells[i][0].angular[1][angles]
 
+            """
+                        cell.avg_angular[angles+2*na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs,
+                                                                                cell.angular[2][angles + na_oct], cell.angular[3][angles + na_oct])
+
+                        # set left flux out (i-1 cell right flux in)
+                        cell.angular[0][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[2][angles+na_oct])
+                        if i >= 1:
+                            self.cells[i-1][j].angular[2][angles+na_oct] = cell.angular[0][angles+na_oct]
+
+                        # set bottom flux out (j-1 cell top flux in)
+                        cell.angular[1][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[3][angles+na_oct])
+                        if j >= 1:
+                            self.cells[i][j-1].angular[3][angles+na_oct] = cell.angular[1][angles+na_oct]
+
+            # reflect on left, bottom boundaries
+
+            i = 0
+            for j in range(self.n_cells):
+                for angles in range(na_oct):
+                    self.cells[0][j].angular[0][angles] = self.cells[0][j].angular[0][angles+na_oct]
+
+            j = 0
+            for i in range(self.n_cells):
+                for angles in range(na_oct):
+                    self.cells[i][0].angular[1][angles] = self.cells[i][0].angular[1][angles+na_oct]
+            """
 
             # sweep starting from bottom right
             for i in reversed(range(self.n_cells)):
@@ -140,12 +167,12 @@ class SN(object):
                         # angles from [n_ang/4, n_ang/2]
                         #angles += na_oct
 
-                        cell.avg_angular[angles+na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles], cell.angular[1][angles+na_oct])
+                        cell.avg_angular[angles+na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles+na_oct], cell.angular[1][angles+na_oct])
 
                         # set left flux out (i-1 cell right flux in)
-                        cell.angular[0][angles] = self.getAngFluxOut(cell.avg_angular[angles+na_oct], cell.angular[2][angles])
+                        cell.angular[0][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+na_oct], cell.angular[2][angles+na_oct])
                         if i >=1: #self.n_cells + 1:
-                            self.cells[i - 1][j].angular[2][angles] = cell.angular[0][angles]
+                            self.cells[i - 1][j].angular[2][angles+na_oct] = cell.angular[0][angles + na_oct]
 
                         # set top flux out (j+1 cell bottom flux in)
                         cell.angular[3][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+na_oct], cell.angular[1][angles+na_oct])
@@ -179,7 +206,7 @@ class SN(object):
                                                                                     cell.material.xs,
                                                                                     cell.angular[0][
                                                                                         angles + na_oct],
-                                                                                    cell.angular[3][angles])
+                                                                                    cell.angular[3][angles + na_oct])
 
                         # set right flux out (and pass to i+i cell as left flux in)
                         cell.angular[2][angles + na_oct] = self.getAngFluxOut(cell.avg_angular[angles + 3 * na_oct],
@@ -188,10 +215,10 @@ class SN(object):
                             self.cells[i + 1][j].angular[0][angles + na_oct] = cell.angular[2][angles + na_oct]
 
                         # set bottom flux out (and pass to j-1 cell as top flux in)
-                        cell.angular[1][angles] = self.getAngFluxOut(cell.avg_angular[angles + 3 * na_oct],
-                                                                     cell.angular[3][angles])
+                        cell.angular[1][angles + na_oct] = self.getAngFluxOut(cell.avg_angular[angles + 3 * na_oct],
+                                                                     cell.angular[3][angles + na_oct])
                         if j >= 1:
-                            self.cells[i][j - 1].angular[3][angles] = cell.angular[1][angles]
+                            self.cells[i][j - 1].angular[3][angles + na_oct] = cell.angular[1][angles + na_oct]
 
             # reflect on right, bottom boundaries
             for j in range(self.n_cells):
