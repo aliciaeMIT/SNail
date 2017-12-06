@@ -16,7 +16,7 @@ q_mod = 0.0                                  #moderator source
 
 
 #convergence tolerance
-tol = 1e-3
+tol = 1e-4
 max_iters = 50
 
 #########################################

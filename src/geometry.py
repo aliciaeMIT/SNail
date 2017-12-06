@@ -47,6 +47,7 @@ class Cell(object):
         self.flux = 0
         self.angular = np.zeros((4, 100))
         self.source = 0
+        self.avg_angular = np.zeros(100)
 
     def getMaterial(self, material):
         self.material = material
