@@ -5,8 +5,10 @@ from PIL import ImageFont
 from math import *
 import matplotlib.pyplot as plt
 import numpy as np
+from errno import EEXIST
+from os import makedirs,path
 
-def plotCenterFlux(mesh, solved, j, iter, order):
+def plotCenterFlux(mesh, solved, j, iter, order, savepath):
     ivals = []
     cellfluxes = []
     fuelbounds = [(mesh.n_mod-0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
@@ -23,9 +25,9 @@ def plotCenterFlux(mesh, solved, j, iter, order):
     plt.ylabel('Scalar Flux')
     plt.xlabel('X node # across centerline (Y node num ' + str(j) + ' )')
     plt.title('Horizontal centerline flux, iteration ' + str(iter) + ', order ' + str(order))
-    plt.savefig('horiz_iter' + str(iter) + '_flux_center.png')
+    plt.savefig(savepath + '/horiz_iter' + str(iter) + '_flux_center.png')
 
-def plotCenterFluxY(mesh, solved, i, iter, order):
+def plotCenterFluxY(mesh, solved, i, iter, order, savepath):
     jvals = []
     cellfluxes = []
     fuelbounds = [(mesh.n_mod - 0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
@@ -43,9 +45,9 @@ def plotCenterFluxY(mesh, solved, i, iter, order):
     plt.ylabel('Scalar Flux')
     plt.xlabel('Y node # across centerline (X node num ' + str(i) + ' )')
     plt.title('Vertical centerline flux, iteration ' + str(iter) + ', order ' + str(order))
-    plt.savefig('vert_iter' + str(iter) + '_flux_center.png')
+    plt.savefig(savepath + '/vert_iter' + str(iter) + '_flux_center.png')
 
-def plotMaterial(mesh, spacing, plot_cells):
+def plotMaterial(mesh, spacing, plot_cells, savepath):
 
 
     bit_size = 500.0
@@ -79,9 +81,9 @@ def plotMaterial(mesh, spacing, plot_cells):
         draw.line((i*bit_length, 0, i*bit_length, size), fill=(0,0,0), width=1)
 
     # save image
-    img.save('material_' + str(spacing)[2:] + '.png')
+    img.save(savepath + '/material_' + str(spacing)[2:] + '.png')
 
-def plotScalarFlux(mesh, order, spacing, iteration):
+def plotScalarFlux(mesh, order, spacing, iteration, savepath):
 
     # create image
     bit_length = round(500.0 / mesh.n_cells)
@@ -128,7 +130,7 @@ def plotScalarFlux(mesh, order, spacing, iteration):
             draw.rectangle([i*bit_length, size - j*bit_length - bit_length, (i+1)*bit_length, size - j*bit_length], (red,green,blue))
 
     # save image
-    img.save('flux_' + str(spacing)[2:] + '_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
+    img.save(savepath + '/flux_' + str(spacing)[2:] + '_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
 
 
 def plotAngularFlux(cell, quad):
@@ -210,3 +212,14 @@ def plotAngularFlux(cell, quad):
 
     fig.savefig('ang_flux.png')
     img.save('ang_flux_circle_' + str(cell.id) + '.png')
+
+
+def mkdir_p(mypath):
+    '''Creates a directory. equivalent to using mkdir -p on the command line'''
+
+    try:
+        makedirs(mypath)
+    except OSError as exc: # Python >2.5
+        if exc.errno == EEXIST and path.isdir(mypath):
+            pass
+        else: raise

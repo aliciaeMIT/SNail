@@ -3,6 +3,7 @@ import solver
 import plotter
 #import PIL
 from math import pi
+import time
 
 #########################################
 ############# PROBLEM SETUP #############
@@ -65,6 +66,14 @@ manyspacings = True
 manyorders = False
 
 
+#create directory to store plots in
+timestr = time.strftime("%Y-%m-%d_%H-%M")
+plotter.mkdir_p(timestr)
+savepath = timestr
+
+print "Created new directory for plots.."
+
+
 if manyspacings:
     print "Iterating over spacings....\n\n"
     order = 4
@@ -86,11 +95,11 @@ if manyspacings:
                   int(cell_width * cell_width - 1),
                   int((cell_width / 2.0) * cell_width + cell_width / 2.0) + fuel_width / 2 - 1,
                   int((cell_width / 2.0 + 1) * cell_width - 1)]
-        plotter.plotMaterial(mesh, spacing, plot_cells)
+        plotter.plotMaterial(mesh, spacing, plot_cells, savepath)
 
         #give order, mesh to solver
         solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area, mesh.mod_area)
-        solve.solveSN(max_iters, plotter, mesh)
+        solve.solveSN(max_iters, plotter, mesh, savepath)
 
         solve.getAvgScalarFlux()
         results.append(solve.results)
