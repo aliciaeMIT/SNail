@@ -21,7 +21,7 @@ class SN(object):
         self.results = 0
 
 
-    def solveSN(self, max_iters, plotter, mesh):
+    def solveSN(self, max_iters, plotter, mesh, savepath):
         check = ConvergenceTest()
         converged = False
         scalar_flux_old = [0,0]
@@ -210,17 +210,13 @@ class SN(object):
             getfluxes = self.getAvgScalarFlux()
             scalar_flux = getfluxes[:2]
 
-            #timestr = time.strftime("%Y-%m-%d %H:%M")
-            #mkdir(timestr)
-
             #print "plotting scalar flux for iteration %d" % (iters)
-            plotter.plotScalarFlux(mesh, self.order, self.d_cell, iters)
 
-            #midpt = self.n_cells/2 - 5
             midpt = self.n_cells/2 - 1
 
-            plotter.plotCenterFlux(mesh, self.cells, midpt, iters, self.order)
-            plotter.plotCenterFluxY(mesh, self.cells, midpt, iters, self.order)
+            plotter.plotScalarFlux(mesh, self.order, self.d_cell, iters, savepath)
+            plotter.plotCenterFlux(mesh, self.cells, midpt, iters, self.order, savepath)
+            plotter.plotCenterFluxY(mesh, self.cells, midpt, iters, self.order, savepath)
 
             converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
 
