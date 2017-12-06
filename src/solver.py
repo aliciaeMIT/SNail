@@ -104,7 +104,7 @@ class SN(object):
 
                         # angles from [n_ang/4, n_ang/2]
                         angles += na_oct
-                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles-na_oct], cell.angular[1][angles])
+                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles], cell.angular[1][angles])
 
                         # set left flux out (i-1 cell right flux in)
                         cell.angular[0][angles] = self.getAngFluxOut(avg, cell.angular[2][angles])
@@ -138,7 +138,7 @@ class SN(object):
                         # angles from [3/4n , n]
                         angles += 2*na_oct
 
-                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles-na_oct], cell.angular[3][angles-na_oct])
+                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[2][angles], cell.angular[3][angles])
 
                         # set left flux out (i-1 cell right flux in)
                         cell.angular[0][angles] = self.getAngFluxOut(avg, cell.angular[2][angles])
@@ -175,7 +175,7 @@ class SN(object):
                         xi = self.quadrature['xi'][angles]
                         angles += 3 * na_oct
 
-                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[0][angles-na_oct/2], cell.angular[3][angles-3*na_oct])
+                        avg = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs, cell.angular[0][angles], cell.angular[3][angles])
 
                         # set right flux out (and pass to i+i cell as left flux in)
                         cell.angular[2][angles] = self.getAngFluxOut(avg, cell.angular[0][angles])
@@ -288,23 +288,12 @@ class SN(object):
                     # accumulate scalar flux avg for mod
                     modflux += cell.flux
 
-        """
-        for i in range(self.n_cells):
-            for cell in self.cells[i]:
-                if cell.region == 'fuel':
-                    # accumulate scalar flux avg for fuel
-                    fuelflux += cell.flux
-                else:
-                    # accumulate scalar flux avg for mod
-                    modflux += cell.flux
-        """
 
-        #fuelflux /= self.fuel_area
+
         fuelflux /= self.n_fuel
-        #fuelflux /= maxflux
-        #modflux /= self.mod_area
+        fuelflux /= maxflux
         modflux /= self.n_mod
-        #modflux /= maxflux
+        modflux /= maxflux
         ratio = fuelflux / modflux
 
         print "Avg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f" %(fuelflux, modflux, avgflux, ratio)
