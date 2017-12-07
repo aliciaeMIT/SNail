@@ -6,6 +6,12 @@ from math import *
 import matplotlib.pyplot as plt
 from errno import EEXIST
 from os import makedirs,path
+"""
+Plotting tool for SN to plot mesh, scalar flux, angular flux
+Adapted from Samuel Shaner's Sn solver, DiscOrd:
+https://github.com/samuelshaner/DiscOrd/
+
+"""
 
 def plotCenterFlux(mesh, solved, j, iter, order, savepath):
     ivals = []
