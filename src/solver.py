@@ -88,7 +88,7 @@ class SN(object):
             for i in range(self.n_cells):
                 for angles in range(na_oct):
                     self.cells[i][j].angular[3][angles + na_oct] = self.cells[i][j].angular[3][angles]
-            
+
 
             #sweep from top right
             for i in reversed(range(self.n_cells)):
@@ -127,33 +127,6 @@ class SN(object):
                 for angles in range(na_oct):
                     self.cells[i][0].angular[1][angles + na_oct] = self.cells[i][0].angular[1][angles]
 
-            """
-                        cell.avg_angular[angles+2*na_oct] = self.getCellAvgFlux(cell.source, eta, xi, cell.material.xs,
-                                                                                cell.angular[2][angles + na_oct], cell.angular[3][angles + na_oct])
-
-                        # set left flux out (i-1 cell right flux in)
-                        cell.angular[0][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[2][angles+na_oct])
-                        if i >= 1:
-                            self.cells[i-1][j].angular[2][angles+na_oct] = cell.angular[0][angles+na_oct]
-
-                        # set bottom flux out (j-1 cell top flux in)
-                        cell.angular[1][angles+na_oct] = self.getAngFluxOut(cell.avg_angular[angles+2*na_oct], cell.angular[3][angles+na_oct])
-                        if j >= 1:
-                            self.cells[i][j-1].angular[3][angles+na_oct] = cell.angular[1][angles+na_oct]
-
-            # reflect on left, bottom boundaries
-
-            i = 0
-            for j in range(self.n_cells):
-                for angles in range(na_oct):
-                    self.cells[0][j].angular[0][angles] = self.cells[0][j].angular[0][angles+na_oct]
-
-            j = 0
-            for i in range(self.n_cells):
-                for angles in range(na_oct):
-                    self.cells[i][0].angular[1][angles] = self.cells[i][0].angular[1][angles+na_oct]
-            """
-
             # sweep starting from bottom right
             for i in reversed(range(self.n_cells)):
                 for j in range(self.n_cells):
@@ -187,7 +160,7 @@ class SN(object):
 
             for i in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[i][j].angular[3][angles] = self.cells[i][j].angular[3][angles + na_oct]
+                    self.cells[i][self.n_cells-1].angular[3][angles] = self.cells[i][self.n_cells-1].angular[3][angles + na_oct]
 
             # sweep from top left
 
@@ -237,8 +210,6 @@ class SN(object):
                     for angles in range(na_oct):
                         cell.flux +=self.quadrature['weight'][angles] * (cell.avg_angular[angles] + cell.avg_angular[angles+na_oct]
                                                                          + cell.avg_angular[angles+2*na_oct] + cell.avg_angular[angles+3*na_oct])
-                            #cell.flux += self.quadrature['weight'][angles] * \
-                                 #(cell.angular[0][allangles] + cell.angular[2][allangles]) / 2
 
             getfluxes = self.getAvgScalarFlux()
             scalar_flux = getfluxes[:2]
@@ -301,8 +272,10 @@ class SN(object):
             for cell in self.cells[i]:
                scalarflux += cell.flux
         #avgflux = (fuelflux + modflux) / self.n_cells
-        avgflux = scalarflux / self.n_cells
+        avgflux = scalarflux / (self.n_cells ** 2)
         maxflux = 0.0
+        fuelcell = 0
+        modcell = 0
 
         #normalize flux
         for i in range(self.n_cells):
@@ -313,15 +286,16 @@ class SN(object):
                 if cell.region == 'fuel':
                     # accumulate scalar flux avg for fuel
                     fuelflux += cell.flux
+                    fuelcell+=1
                 else:
                     # accumulate scalar flux avg for mod
                     modflux += cell.flux
+                    modcell +=1
 
-
-
-        fuelflux /= self.n_fuel
+        fuelflux /= fuelcell
         #fuelflux /= maxflux
-        modflux /= self.n_mod
+        modflux /= modcell
+
         #modflux /= maxflux
         ratio = fuelflux / modflux
 
