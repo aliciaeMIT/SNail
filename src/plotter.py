@@ -8,7 +8,8 @@ from errno import EEXIST
 from os import makedirs,path
 """
 Plotting tool for SN to plot mesh, scalar flux, angular flux
-Adapted from Samuel Shaner's Sn solver, DiscOrd:
+
+plotMaterial, plotScalarFlux, and plotAngularFlux methods are adapted from Samuel Shaner's Sn solver, DiscOrd:
 https://github.com/samuelshaner/DiscOrd/
 
 """
@@ -138,38 +139,38 @@ def plotScalarFlux(mesh, order, spacing, iteration, savepath):
     img.save(savepath + '/flux_' + str(spacing)[2:] + '_' + str(int(floor(order/10))) + str(order % 10) + '_' + str(int(floor(iteration/10))) + str(iteration % 10) + '.png')
 
 
-def plotAngularFlux(cell, quad):
+def plotAngularFlux(cell, quad, location, savepath):
 
     # create image
     img = Image.new('RGB', (500,500), 'white')
     draw = ImageDraw.Draw(img)
 
-    # get mus, eta's, and index for smallest polar angle (xi)
-    xi_min = min(quad['xi'])
-    min_xi_indices = []
-    for i,a in enumerate(quad['xi']):
-        if abs(a - xi_min) < .0001:
-            min_xi_indices.append(i)
+    # get xi, eta's, and index for smallest polar angle (mu)
+    mu_min = min(quad['mu'])
+    min_mu_indices = []
+    for i,a in enumerate(quad['mu']):
+        if abs(a - mu_min) < .0001:
+            min_mu_indices.append(i)
 
     # get the angular fluxes for the selected angles and make theta array
     ang_fluxes = []
     theta = []
 
-    for i in min_xi_indices:
-        ang_fluxes.append(cell.ang_flux[i])
-        theta.append(acos(quad['mu'][i]))
+    for i in min_mu_indices:
+        ang_fluxes.append(cell.avg_angular[i])
+        theta.append(acos(quad['eta'][i]))
 
-    for i in min_xi_indices:
-        ang_fluxes.append(cell.ang_flux[quad['num_angles_per_octant'] + i])
-        theta.append(pi - acos(quad['mu'][i]))
+    for i in min_mu_indices:
+        ang_fluxes.append(cell.avg_angular[quad['n_angles_per_octant'] + i])
+        theta.append(pi - acos(quad['eta'][i]))
 
-    for i in min_xi_indices:
-        ang_fluxes.append(cell.ang_flux[2*quad['num_angles_per_octant'] + i])
-        theta.append(pi + acos(quad['mu'][i]))
+    for i in min_mu_indices:
+        ang_fluxes.append(cell.avg_angular[2*quad['n_angles_per_octant'] + i])
+        theta.append(pi + acos(quad['eta'][i]))
 
-    for i in min_xi_indices:
-        ang_fluxes.append(cell.ang_flux[3*quad['num_angles_per_octant'] + i])
-        theta.append(2*pi - acos(quad['mu'][i]))
+    for i in min_mu_indices:
+        ang_fluxes.append(cell.avg_angular[3*quad['n_angles_per_octant'] + i])
+        theta.append(2*pi - acos(quad['eta'][i]))
 
 
     # rarrange theta array from min to max
@@ -215,8 +216,8 @@ def plotAngularFlux(cell, quad):
     fig = plt.figure()
     plt.plot(theta_sort, ang_fluxes_sort)
 
-    fig.savefig('ang_flux.png')
-    img.save('ang_flux_circle_' + str(cell.id) + '.png')
+    fig.savefig(savepath + '/ang_flux.png')
+    img.save(savepath + '/ang_flux_circle_' + location + '.png')
 
 
 def mkdir_p(mypath):

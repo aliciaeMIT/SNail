@@ -249,6 +249,11 @@ class SN(object):
             else:
                 print "Converged in %d iterations\n" %(iters)
                 self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
+                # plot angular flux for 'center' cell
+                ii = self.n_cells / 2
+                cell = self.cells[ii][ii]
+                location = 'center'
+                plotter.plotAngularFlux(cell, self.quadrature, location, savepath)
 
 
     def getCellAvgFlux(self, q, eta, xi, sigma, psi_h, psi_v):

@@ -1,7 +1,6 @@
 import geometry
 import solver
 import plotter
-#import PIL
 from math import pi
 import time
 
@@ -29,7 +28,7 @@ q_mod = 0.0                                  #moderator source
 
 
 #convergence tolerance
-tol = 1e-6
+tol = 1e-7
 max_iters = 50
 
 f.write("********PROBLEM SETUP********\n")
@@ -76,21 +75,22 @@ moderator = geometry.Material('moderator', q_mod, sigma_mod, sigma_mod_scatter)
 
 
 #Sn order
-orders = [2, 4, 8]
-spacings = [0.02, 0.01, 0.005, 0.004]  #mesh spacing
+orders = [2, 4, 8, 16]
+spacings = [0.01]#[0.02, 0.01, 0.005, 0.004]  #mesh spacing
 results = []
 
 manyspacings = True
 manyorders = False
 convergemesh = False
 
+rat_old = 0
+
 if manyspacings:
     print "Iterating over spacings....\n\n"
     f.write("Iterating over spacings...\n\n")
-    order = 4
+    order = 16
     i=0
-    sptol = 0.1
-    rat_old = 0
+    sptol = 0.1 #percent change in flux ratio
     for spacing in spacings:
     #for order in orders:
         print "\nSolving SN, order %d, spacing %g" % (order, spacing)
@@ -118,9 +118,11 @@ if manyspacings:
         results.append(solve.results)
         f.write("\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f\n\n"
                 %(solve.results[0], solve.results[1], solve.results[2], solve.results[3], solve.results[4]))
-        fluxchg = (solve.results[-1] - rat_old) / solve.results[-1]
+        fluxchg = ((solve.results[-1] - rat_old) / solve.results[-1])*100
         print "flux ratio change: %g" % (fluxchg)
         f.write("flux ratio change: %g\n\n\n" % (fluxchg))
+
+
 
         if convergemesh:
             if fluxchg <= sptol:
@@ -134,7 +136,7 @@ if manyorders:
     print "Iterating over orders...\n\n"
     f.write("Iterating over orders...\n\n")
     results = []
-    spacing = 0.02
+    spacing = 0.01
 
     for order in orders:
         print "\nSolving SN, order %d, spacing %g" % (order, spacing)
@@ -163,3 +165,7 @@ if manyorders:
         results.append(solve.results)
         f.write("\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f\n\n"
             % (solve.results[0], solve.results[1], solve.results[2], solve.results[3], solve.results[4]))
+        fluxchg = ((solve.results[-1] - rat_old) / solve.results[-1])*100
+        print "flux ratio change: %g" % (fluxchg)
+        f.write("flux ratio change: %g\n\n\n" % (fluxchg))
+        rat_old = solve.results[-1]
