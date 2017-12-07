@@ -6,7 +6,7 @@ import time
 
 class SN(object):
 
-    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol, fuel_area, mod_area):
+    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol, fuel_area, mod_area, resultsfile):
         self.quadrature = LevelSymmetricQuadrature().getQuadrature(order)
         self.order = order
         self.n_angles = self.quadrature['n_angles']
@@ -19,15 +19,20 @@ class SN(object):
         self.fuel_area = fuel_area
         self.mod_area = mod_area
         self.results = 0
+        self.resultsfile = resultsfile + '_results'
 
 
     def solveSN(self, max_iters, plotter, mesh, savepath):
+        #f = open('%s.txt' % self.resultsfile, 'a+')
         check = ConvergenceTest()
         converged = False
         scalar_flux_old = [0,0]
         iters = 0
         na_oct = self.n_angles // 4 #number of angles per octant
         print "fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel)
+        #f.write("fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel))
+        #f.close()
+
 
         #initialize scalar flux guesses for source calculation: phi = q / sigma_absorption for mod, phi = q for fuel
         for i in range(self.n_cells):
@@ -101,7 +106,6 @@ class SN(object):
                         xi = self.quadrature['xi'][angles]
 
                         # angles from [n_ang/4, n_ang/2]
-                        # angles += na_oct
 
                         cell.avg_angular[angles + na_oct] = self.getCellAvgFlux(cell.source, eta, xi,
                                                                                 cell.material.xs,

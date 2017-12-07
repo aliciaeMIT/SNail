@@ -8,8 +8,8 @@ import time
 #########################################
 ############# PROBLEM SETUP #############
 #########################################
-pitch = 1.26
-fwidth = 0.7                                #fuel width/height
+pitch = 1.24
+fwidth = 0.8                               #fuel width/height
 q_fuel = 10 / (4 * pi )                       #fuel source
 q_mod = 0.0                                  #moderator source
 
@@ -59,19 +59,24 @@ moderator = geometry.Material('moderator', q_mod, sigma_mod, sigma_mod_scatter)
 
 #Sn order
 orders = [2, 4, 8]
-spacings = [0.005]  #mesh spacing
+spacings = [0.02]#[0.02, 0.01, 0.005, 0.004]  #mesh spacing
 results = []
 
 manyspacings = True
 manyorders = False
 
 
-#create directory to store plots in
-timestr = 'plots/' + time.strftime("%Y-%m-%d_%H-%M")
-plotter.mkdir_p(timestr)
-savepath = timestr
+#create directory to store plots, results in
+pathname = 'plots/' + time.strftime("%Y-%m-%d_%H-%M")
+timestr = time.strftime("%Y-%m-%d_%H-%M")
+plotter.mkdir_p(pathname)
+savepath = pathname
+resultsfile = pathname + '/' + timestr + '_results'
+
+f = open('%s.txt' %resultsfile, 'w+')
 
 print "Created new directory for plots.."
+f.write("Created new directory for plots..")
 
 
 if manyspacings:
@@ -83,6 +88,8 @@ if manyspacings:
     for spacing in spacings:
     #for order in orders:
         print "\nSolving SN, order %d, spacing %g" % (order, spacing)
+        f.write("\nSolving SN, order %d, spacing %g" % (order, spacing))
+        #f.close()
         #setup mesh cells
         mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
         mesh.setMesh()
@@ -98,15 +105,17 @@ if manyspacings:
         plotter.plotMaterial(mesh, spacing, plot_cells, savepath)
 
         #give order, mesh to solver
-        solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area, mesh.mod_area)
+        solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area, mesh.mod_area, timestr)
         solve.solveSN(max_iters, plotter, mesh, savepath)
 
-        solve.getAvgScalarFlux()
+        #solve.getAvgScalarFlux()
         results.append(solve.results)
+        f.write("\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
+                %(solve.results[0], solve.results[1], solve.results[2], solve.results[3], solve.results[4]))
         fluxchg = (solve.results[-1] - rat_old)/solve.results[-1]
         print "flux ratio change: %g" %(fluxchg)
         if fluxchg <= sptol:
-            print "Spatial mesh is converged!"
+            print "Spatial mesh is converged! Spacing of %g" %(spacing)
             break
         rat_old = solve.results[-1]
         i+=1

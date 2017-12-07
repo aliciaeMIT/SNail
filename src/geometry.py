@@ -45,9 +45,9 @@ class Cell(object):
 
         self.region = 'moderator'
         self.flux = 0
-        self.angular = np.zeros((4, 100))
+        self.angular = np.zeros((4, 200))
         self.source = 0
-        self.avg_angular = np.zeros(100)
+        self.avg_angular = np.zeros(200)
 
     def getMaterial(self, material):
         self.material = material
