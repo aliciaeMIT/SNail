@@ -23,15 +23,14 @@ class SN(object):
 
 
     def solveSN(self, max_iters, plotter, mesh, savepath):
-        #f = open('%s.txt' % self.resultsfile, 'a+')
+
         check = ConvergenceTest()
         converged = False
         scalar_flux_old = [0,0]
         iters = 0
         na_oct = self.n_angles // 4 #number of angles per octant
         print "fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel)
-        #f.write("fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel))
-        #f.close()
+
 
 
         #initialize scalar flux guesses for source calculation: phi = q / sigma_absorption for mod, phi = q for fuel
@@ -285,7 +284,6 @@ class SN(object):
         for i in range(self.n_cells):
             for cell in self.cells[i]:
                scalarflux += cell.flux
-        #avgflux = (fuelflux + modflux) / self.n_cells
         avgflux = scalarflux / (self.n_cells ** 2)
         maxflux = 0.0
         fuelcell = 0
