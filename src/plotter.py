@@ -19,8 +19,6 @@ def plotCenterFlux(mesh, solved, j, iter, order, savepath):
     cellfluxes = []
     fuelbounds = [(mesh.n_mod-0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
 
-    #comment out next line to plot all iterations on same plot
-    plt.figure(1)
     for xc in fuelbounds:
         plt.axvline(x=xc, color='k', linestyle = '--')
 
@@ -39,8 +37,6 @@ def plotCenterFluxY(mesh, solved, i, iter, order, savepath):
     fuelbounds = [(mesh.n_mod - 0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
     #0.5 is subtracted to account for boundary being between cells for fuel and mod indices
 
-    #comment out next line to plot all iterations on same plot
-    plt.figure(2)
     for xc in fuelbounds:
         plt.axvline(x=xc, color='k', linestyle = '--')
 
@@ -216,7 +212,7 @@ def plotAngularFlux(cell, quad, location, savepath):
     fig = plt.figure()
     plt.plot(theta_sort, ang_fluxes_sort)
 
-    fig.savefig(savepath + '/ang_flux.png')
+    fig.savefig(savepath + '/ang_flux_' + location +'.png')
     img.save(savepath + '/ang_flux_circle_' + location + '.png')
 
 

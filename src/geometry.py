@@ -39,6 +39,17 @@ class Geometry(object):
                     cell.getMaterial(self.moderator)
                     #print "set cell %d, %d to %s " % (i, j, cell.region)
 
+    def getWidth(self, width, spacing):
+        return int(width / spacing)
+
+    def getPlotCells(self, cell_width, fuel_width):
+        plotcells = [int((cell_width / 2.0) * cell_width + cell_width / 2.0),
+                  int((cell_width / 2.0 + fuel_width / 2 - 1) * cell_width + cell_width / 2.0) + fuel_width / 2 - 1,
+                  int(cell_width * cell_width - 1),
+                  int((cell_width / 2.0) * cell_width + cell_width / 2.0) + fuel_width / 2 - 1,
+                  int((cell_width / 2.0 + 1) * cell_width - 1)]
+        return plotcells
+
 
 class Cell(object):
     def __init__(self):

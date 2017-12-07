@@ -29,9 +29,7 @@ class SN(object):
         scalar_flux_old = [0,0]
         iters = 0
         na_oct = self.n_angles // 4 #number of angles per octant
-        print "fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel)
-
-
+        #print "fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel)
 
         #initialize scalar flux guesses for source calculation: phi = q / sigma_absorption for mod, phi = q for fuel
         for i in range(self.n_cells):
@@ -43,7 +41,6 @@ class SN(object):
                     absorpt = cell.material.xs - cell.material.scatter
                 cell.flux = cell.material.q / absorpt
                 #print "Initial cell flux guess: %g" %(cell.flux)
-
 
         while not converged:
 
@@ -126,7 +123,7 @@ class SN(object):
                             self.cells[i][j + 1].angular[1][angles + na_oct] = cell.angular[3][angles + na_oct]
 
             # reflect on left, top boundaries
-            i = 0
+
             for j in range(self.n_cells):
                 for angles in range(na_oct):
                     self.cells[0][j].angular[0][angles] = self.cells[0][j].angular[0][angles + na_oct]
@@ -163,16 +160,15 @@ class SN(object):
 
             # reflect on left, bottom boundaries
 
-            i = 0
+
             for j in range(self.n_cells):
                 for angles in range(na_oct):
                     self.cells[0][j].angular[0][angles + na_oct] = self.cells[0][j].angular[0][angles]
 
-            j = 0
+
             for i in range(self.n_cells):
                 for angles in range(na_oct):
                     self.cells[i][0].angular[1][angles + na_oct] = self.cells[i][0].angular[1][angles]
-
 
 
             # sweep from top left
@@ -186,7 +182,7 @@ class SN(object):
 
                         eta = self.quadrature['eta'][angles]
                         xi = self.quadrature['xi'][angles]
-                        # angles += na_oct
+
 
                         cell.avg_angular[angles + 3 * na_oct] = self.getCellAvgFlux(cell.source, eta, xi,
                                                                                     cell.material.xs,
@@ -209,9 +205,9 @@ class SN(object):
             # reflect on right, bottom boundaries
             for j in range(self.n_cells):
                 for angles in range(na_oct):
-                    self.cells[i][j].angular[2][angles] = self.cells[i][j].angular[2][angles + na_oct]
+                    self.cells[self.n_cells - 1][j].angular[2][angles] = self.cells[self.n_cells - 1][j].angular[2][angles + na_oct]
 
-            j = 0
+
             for i in range(self.n_cells):
                 for angles in range(na_oct):
                     self.cells[i][0].angular[1][angles] = self.cells[i][0].angular[1][angles + na_oct]
@@ -238,7 +234,7 @@ class SN(object):
             converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
 
             if not converged:
-                scalar_flux_old = scalar_flux[:]#self.getAvgScalarFlux()
+                scalar_flux_old = scalar_flux[:]
 
                 for i in range(self.n_cells):
                     for cell in self.cells[i]:
@@ -249,11 +245,17 @@ class SN(object):
             else:
                 print "Converged in %d iterations\n" %(iters)
                 self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
-                # plot angular flux for 'center' cell
+
+                # plot angular flux for center, center-edge fuel, corner fuel, and corner pincell cells
+                # center
                 ii = self.n_cells / 2
-                cell = self.cells[ii][ii]
-                location = 'center'
-                plotter.plotAngularFlux(cell, self.quadrature, location, savepath)
+                #fuel right edge
+                jj = self.n_cells/2 + self.n_fuel / 2 - 1
+
+                cells = (self.cells[ii][ii], self.cells[jj][ii], self.cells[jj][self.n_mod], self.cells[self.n_cells-1][0])
+                location = ['center', 'center-edge', 'fuel-corner', 'pincell-corner']
+                for k, cell in enumerate(cells):
+                    plotter.plotAngularFlux(cell, self.quadrature, location[k], savepath)
 
 
     def getCellAvgFlux(self, q, eta, xi, sigma, psi_h, psi_v):
