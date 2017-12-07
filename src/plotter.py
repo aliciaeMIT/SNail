@@ -4,7 +4,6 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from math import *
 import matplotlib.pyplot as plt
-import numpy as np
 from errno import EEXIST
 from os import makedirs,path
 

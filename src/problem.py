@@ -65,7 +65,7 @@ sigma_fuel = (xs_scatter_238 + 2 * xs_scatter_o) * num_density_uo2 * barns      
 sigma_mod = (2 * xs_absorption_h + xs_scatter_o + 2 * xs_scatter_h) * num_density_h2o * barns       #moderator macro XS
 sigma_mod_scatter = (xs_scatter_o + 2 * xs_scatter_h) * num_density_h2o * barns
 
-f.write("fuel total xs \t %g\nmod total xs \t %g\nmod scatter xs \t %g\n\n*****************************" %(sigma_fuel, sigma_mod, sigma_mod_scatter))
+f.write("fuel total xs \t %g\nmod total xs \t %g\nmod scatter xs \t %g\n\n*****************************\n\n" %(sigma_fuel, sigma_mod, sigma_mod_scatter))
 
 #########################################
 ############## SETUP SOLVE ##############
@@ -77,15 +77,16 @@ moderator = geometry.Material('moderator', q_mod, sigma_mod, sigma_mod_scatter)
 
 #Sn order
 orders = [2, 4, 8]
-spacings = [0.02]#[0.02, 0.01, 0.005, 0.004]  #mesh spacing
+spacings = [0.02, 0.01, 0.005, 0.004]  #mesh spacing
 results = []
 
-manyspacings = False
-manyorders = True
+manyspacings = True
+manyorders = False
 convergemesh = False
 
 if manyspacings:
     print "Iterating over spacings....\n\n"
+    f.write("Iterating over spacings...\n\n")
     order = 4
     i=0
     sptol = 0.1
@@ -131,9 +132,10 @@ if manyspacings:
 
 if manyorders:
     print "Iterating over orders...\n\n"
+    f.write("Iterating over orders...\n\n")
     results = []
-    spacing = spacings[0]
-    
+    spacing = 0.02
+
     for order in orders:
         print "\nSolving SN, order %d, spacing %g" % (order, spacing)
         f.write("\nSolving SN, order %d, spacing %g" % (order, spacing))
@@ -157,19 +159,7 @@ if manyorders:
                           mesh.mod_area, timestr)
         solve.solveSN(max_iters, plotter, mesh, savepath)
 
-        #solve.getAvgScalarFlux()
+
         results.append(solve.results)
         f.write("\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f\n\n"
             % (solve.results[0], solve.results[1], solve.results[2], solve.results[3], solve.results[4]))
-        """
-        i=0
-        print "\n\n---------------------------------\nSOLVE RESULTS\n---------------------------------"
-        for result in results:
-            print "SN Order: %d\n" %(orders[i])
-            it, ff, mf, af, rat = result
-
-            print "Iterations to convergence: %d \nModerator flux: %g\nFuel flux: %g\nAvg flux: %g\nFlux ratio: %g"\
-                  %(it, mf, ff, af, rat)
-            print "---------------------------------\n"
-            i+=1
-        """
