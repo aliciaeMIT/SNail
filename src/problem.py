@@ -7,9 +7,9 @@ import time
 #########################################
 ############# PROBLEM SETUP #############
 #########################################
-pitch = 1.24
+pitch = 1.6
 fwidth = 0.8                               #fuel width/height
-q_fuel = 1 / (4 * pi )                    #fuel source
+q_fuel = 10 / (4 * pi )                    #fuel source
 q_mod = 0.0                                #moderator source
 
 #convergence tolerance
@@ -21,12 +21,12 @@ orders = [2, 4, 8, 16]
 spacings = [0.02, 0.01, 0.005, 0.004]
 
 singlesolve = True
-manyspacings = False
+manyspacings = True
 manyorders = False
 convergemesh = False
 
 if singlesolve:
-    order = 4
+    order = 16
     spacing = 0.01
 
 if manyspacings:
