@@ -14,15 +14,16 @@ q_mod = 0.0                                #moderator source
 
 #convergence tolerance
 tol = 1e-6
-max_iters = 50
+max_iters = 200
 
 #Sn order, mesh spacings
-orders = [2, 4, 8, 16]
-spacings = [0.02, 0.01, 0.005, 0.004]
+orders = [2, 4, 8, 16, 24]
+spacings = [0.2, 0.16, 0.1, 0.08, 0.05, 0.04, 0.01]#[0.02, 0.01, 0.005, 0.004]
 
-singlesolve = True
-manyspacings = False
-manyorders = False
+getnumunknowns = True
+singlesolve = False
+manyspacings = True
+manyorders = True
 convergemesh = False
 update_source = True
 tally_fuel_corner = True
@@ -32,7 +33,7 @@ if singlesolve:
     spacing = 0.1
 
 if manyspacings:
-    order = 4
+    order = 2
     if convergemesh:
         sptol = 0.1  # percent change in flux ratio
 
@@ -116,14 +117,26 @@ def solveSN(spacing, order, savepath):
     # give order, mesh to solver
     solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area,
                       mesh.mod_area, timestr, mesh.top_right_corner_fuel)
-    solve.solveSN(max_iters, plotter, mesh, savepath, update_source)
+    SNresults = solve.solveSN(max_iters, plotter, mesh, savepath, update_source)
 
-    f.write(
-        "\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
-        "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g"
-        % (solve.results[0], solve.results[1], solve.results[2], solve.results[3],
-           solve.results[4], solve.results[5], solve.results[5]/q_fuel))
-    return solve.results[4]
+    if SNresults:
+        f.write(
+            "\nConverged in %d iterations!\nL2 \t%g \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
+            "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g\n"
+            % (solve.results[0], solve.l2, solve.results[1], solve.results[2], solve.results[3],
+               solve.results[4], solve.results[5], solve.results[5]/q_fuel))
+        return solve.results[4]
+    elif not SNresults:
+        f.write("\n*********************************\n"
+                "Not converged after %d iterations. Rerun this case with more iterations. \nL2 \t%g" %(max_iters, solve.l2))
+        f.write(
+            "\nAvg fuel flux = %f nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
+            "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g\n"
+            "\n ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** * \n"
+            % (solve.results[1], solve.results[2], solve.results[3],
+               solve.results[4], solve.results[5], solve.results[5] / q_fuel))
+        return solve.results[4]
+
 
 def solveSpacings(spacings, order):
     ratio_old = 0
@@ -131,7 +144,7 @@ def solveSpacings(spacings, order):
     f.write("Iterating over spacings...\n\n")
 
     for spacing in spacings:
-        savepath = pathname + '/spacing_' + str(spacing)
+        savepath = pathname + '/spacing_' + str(spacing) + 'order_' + str(order)
         plotter.mkdir_p(savepath)
 
         result = solveSN(spacing, order, savepath)
@@ -153,7 +166,7 @@ def solveOrders(spacing, orders):
     f.write("Iterating over orders...\n\n")
 
     for order in orders:
-        savepath = pathname + '/order_' + str(order)
+        savepath = pathname + '/order_' + str(order) + 'spacing_' + str(spacing)
         plotter.mkdir_p(savepath)
 
         result = solveSN(spacing, order, savepath)
@@ -163,12 +176,30 @@ def solveOrders(spacing, orders):
         f.write("flux ratio change: %g\n\n\n" % (fluxchg))
         ratio_old = result
 
+def getNumUnknowns(spacing, order):
+    # setup mesh cells
+    mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
+    mesh.setMesh(tally_fuel_corner)
+    f.write("SN order\t%g\tspacing\t%g\tnum cells\t%g\tnum unknowns\t%g\n"
+            % (order, spacing, (mesh.n_cells ** 2), (mesh.n_cells ** 2) * order))
+    print "\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order)
+
 if singlesolve:
     solveSN(spacing, order, savepath)
-if manyorders:
+
+
+if getnumunknowns and manyspacings and manyorders:
+    for ord in orders:
+        for space in spacings:
+            getNumUnknowns(space, ord)
+elif manyspacings and manyorders:
+    for item in spacings:
+        solveOrders(item, orders)
+elif manyorders:
     solveOrders(spacing, orders)
-if manyspacings:
+elif manyspacings:
     solveSpacings(spacings, order)
+
 
 f.close()
 

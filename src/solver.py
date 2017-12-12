@@ -21,6 +21,7 @@ class SN(object):
         self.results = []
         self.resultsfile = resultsfile + '_results'
         self.top_right_corner_fuel = mesh_fuelcorner
+        self.l2 = 1
 
 
     def solveSN(self, max_iters, plotter, mesh, savepath, update_source):
@@ -224,7 +225,10 @@ class SN(object):
             getfluxes = list(self.getAvgScalarFlux())
             cornerflux = self.getCornerFlux()
             scalar_flux = getfluxes[:2]
-
+            self.results.append(iters)
+            for item in getfluxes:
+                self.results.append(item)
+            self.results.append(cornerflux)
             #print "plotting scalar flux for iteration %d" % (iters)
 
             midpt = self.n_cells/2 - 1
@@ -234,6 +238,7 @@ class SN(object):
             plotter.plotCenterFluxY(mesh, self.cells, midpt, iters, self.order, savepath)
 
             converged = check.isConverged(scalar_flux, scalar_flux_old, self.tol)
+            self.l2 = check.l2
 
             if not converged:
                 scalar_flux_old = scalar_flux[:]
@@ -244,6 +249,7 @@ class SN(object):
                 if iters == max_iters:
                     converged = True
                     print "Not converged after %d iterations." %(iters)
+                    return False
             else:
                 print "Converged in %d iterations\n" %(iters)
                 #self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
@@ -261,6 +267,7 @@ class SN(object):
                 location = ['center', 'center-edge', 'fuel-corner', 'pincell-corner']
                 for k, cell in enumerate(cells):
                     plotter.plotAngularFlux(cell, self.quadrature, location[k], savepath)
+                return True
 
 
     def getCellAvgFlux(self, q, eta, xi, sigma, psi_h, psi_v):
