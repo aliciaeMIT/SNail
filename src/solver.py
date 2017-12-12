@@ -6,7 +6,7 @@ import time
 
 class SN(object):
 
-    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol, fuel_area, mod_area, resultsfile):
+    def __init__(self, order, cells, mesh_spacing, num_cells, num_fuel, num_mod, tol, fuel_area, mod_area, resultsfile, mesh_fuelcorner):
         self.quadrature = LevelSymmetricQuadrature().getQuadrature(order)
         self.order = order
         self.n_angles = self.quadrature['n_angles']
@@ -18,11 +18,12 @@ class SN(object):
         self.tol = tol
         self.fuel_area = fuel_area
         self.mod_area = mod_area
-        self.results = 0
+        self.results = []
         self.resultsfile = resultsfile + '_results'
+        self.top_right_corner_fuel = mesh_fuelcorner
 
 
-    def solveSN(self, max_iters, plotter, mesh, savepath):
+    def solveSN(self, max_iters, plotter, mesh, savepath, update_source):
 
         check = ConvergenceTest()
         converged = False
@@ -30,25 +31,25 @@ class SN(object):
         iters = 0
         na_oct = self.n_angles // 4 #number of angles per octant
         #print "fuel boundaries: %g, %g" %(self.n_mod, self.n_mod + self.n_fuel)
-
-        #initialize scalar flux guesses for source calculation: phi = q / sigma_absorption for mod, phi = q for fuel
-        for i in range(self.n_cells):
-            for j in range(self.n_cells):
-                cell = self.cells[i][j]
-                if cell.region == 'fuel':
-                    absorpt = 1
-                else:
-                    absorpt = cell.material.xs - cell.material.scatter
-                cell.flux = cell.material.q / absorpt
-                #print "Initial cell flux guess: %g" %(cell.flux)
+        if update_source:
+            #initialize scalar flux guesses for source calculation: phi = q / sigma_absorption for mod, phi = q for fuel
+            for i in range(self.n_cells):
+                for j in range(self.n_cells):
+                    cell = self.cells[i][j]
+                    if cell.region == 'fuel':
+                        absorpt = 1
+                    else:
+                        absorpt = cell.material.xs - cell.material.scatter
+                    cell.flux = cell.material.q / absorpt
+                    #print "Initial cell flux guess: %g" %(cell.flux)
 
         while not converged:
 
             iters +=1
             print "Iteration %d" %(iters)
-
-            #update source for each cell
-            self.updateAllCellSource()
+            if update_source:
+                #update source foAr each cell
+                self.updateAllCellSource()
 
             #reinitialize fluxes to zero
             for i in range(self.n_cells):
@@ -220,7 +221,8 @@ class SN(object):
                         cell.flux +=self.quadrature['weight'][angles] * (cell.avg_angular[angles] + cell.avg_angular[angles+na_oct]
                                                                          + cell.avg_angular[angles+2*na_oct] + cell.avg_angular[angles+3*na_oct])
 
-            getfluxes = self.getAvgScalarFlux()
+            getfluxes = list(self.getAvgScalarFlux())
+            cornerflux = self.getCornerFlux()
             scalar_flux = getfluxes[:2]
 
             #print "plotting scalar flux for iteration %d" % (iters)
@@ -244,8 +246,11 @@ class SN(object):
                     print "Not converged after %d iterations." %(iters)
             else:
                 print "Converged in %d iterations\n" %(iters)
-                self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
-
+                #self.results = self.returnSolveResults(iters, getfluxes[0], getfluxes[1], getfluxes[2], getfluxes[3])
+                self.results.append(iters)
+                for item in getfluxes:
+                    self.results.append(item)
+                self.results.append(cornerflux)
                 # plot angular flux for center, center-edge fuel, corner fuel, and corner pincell cells
                 # center
                 ii = self.n_cells / 2
@@ -299,9 +304,13 @@ class SN(object):
         #normalize flux
         for i in range(self.n_cells):
             for cell in self.cells[i]:
-                cell.flux /= avgflux
+                #                                                                                                                                                                                                                cell.flux /= avgflux
                 if cell.flux > maxflux:
                     maxflux = cell.flux
+
+        for i in range(self.n_cells):
+            for cell in self.cells[i]:
+                cell.flux /= maxflux
                 if cell.region == 'fuel':
                     # accumulate scalar flux avg for fuel
                     fuelflux += cell.flux
@@ -320,6 +329,18 @@ class SN(object):
 
         print "Avg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f" %(fuelflux, modflux, avgflux, ratio)
         return fuelflux, modflux, avgflux, ratio
+
+    def getCornerFlux(self):
+        #accumulates and averages the fluxes over the cells in the top right quarter corner of fuel
+        #corner_cells = list of mesh cell objects in top right quarter of fuel
+        cornerflux = 0
+        corner_cells = self.top_right_corner_fuel
+        num_corner_cells = len(corner_cells)
+        for cell in corner_cells:
+            cornerflux += cell.flux
+        cornerflux /= num_corner_cells
+        print "\ncorner flux = %g, num_cells in corner = %g\n" %(cornerflux, num_corner_cells)
+        return cornerflux
 
     def returnSolveResults(self, iters, fuelflux, modflux, avgflux, ratio):
        # print "Iterations to convergence: %d \nModerator flux: %g\nFuel flux: %g\n Avg flux: %g\n Flux ratio: %g" \

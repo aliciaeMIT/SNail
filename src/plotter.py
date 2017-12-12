@@ -6,6 +6,7 @@ from math import *
 import matplotlib.pyplot as plt
 from errno import EEXIST
 from os import makedirs,path
+import shutil
 """
 Plotting tool for SN to plot mesh, scalar flux, angular flux
 
@@ -15,6 +16,8 @@ https://github.com/samuelshaner/DiscOrd/
 """
 
 def plotCenterFlux(mesh, solved, j, iter, order, savepath):
+    fignum = 1
+    plt.figure(fignum)
     ivals = []
     cellfluxes = []
     fuelbounds = [(mesh.n_mod-0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
@@ -30,8 +33,11 @@ def plotCenterFlux(mesh, solved, j, iter, order, savepath):
     plt.xlabel('X node # across centerline (Y node num ' + str(j) + ' )')
     plt.title('Horizontal centerline flux, iteration ' + str(iter) + ', order ' + str(order))
     plt.savefig(savepath + '/horiz_iter' + str(iter) + '_flux_center.png')
+    #plt.close()
 
 def plotCenterFluxY(mesh, solved, i, iter, order, savepath):
+    fignum = 2
+    plt.figure(fignum)
     jvals = []
     cellfluxes = []
     fuelbounds = [(mesh.n_mod - 0.5), (mesh.n_fuel + mesh.n_mod - 0.5)]
@@ -48,6 +54,7 @@ def plotCenterFluxY(mesh, solved, i, iter, order, savepath):
     plt.xlabel('Y node # across centerline (X node num ' + str(i) + ' )')
     plt.title('Vertical centerline flux, iteration ' + str(iter) + ', order ' + str(order))
     plt.savefig(savepath + '/vert_iter' + str(iter) + '_flux_center.png')
+    #plt.close()
 
 def plotMaterial(mesh, spacing, plot_cells, savepath):
 
@@ -225,3 +232,15 @@ def mkdir_p(mypath):
         if exc.errno == EEXIST and path.isdir(mypath):
             pass
         else: raise
+
+def saveInputFile(savepath):
+    """saves copy of input file in same directory as plots"""
+    filename = savepath + '/input.py'
+    try:
+        shutil.copy('problem.py', filename)
+    # eg. src and dest are the same file
+    except shutil.Error as e:
+        print('Error: %s' % e)
+    # eg. source or destination doesn't exist
+    except IOError as e:
+        print('Error: %s' % e.strerror)
