@@ -13,13 +13,13 @@ class Geometry(object):
         self.moderator = moderator
         self.fuel_area = fuel_width ** 2
         self.mod_area = pitch ** 2 - fuel_width ** 2
+        self.top_right_corner_fuel = []  # store list of cells in top right quarter corner of fuel
 
-    def setMesh(self):
+    def setMesh(self, tally_fuel_corner):
         self.n_cells = int(math.ceil(self.width / self.mesh)) #number of cells in x, y
         n_cells = self.n_cells
         self.cells = np.zeros((n_cells, n_cells), dtype=object)
 
-        #self.n_mod = int(math.ceil((self.width / 2 - self.fw / 2) / self.mesh))
         self.n_fuel = int(math.ceil(self.fw / self.mesh))
         self.n_mod = int((self.n_cells - self.n_fuel) / 2)
         if not (2*self.n_mod + self.n_fuel) == self.n_cells:
@@ -38,6 +38,15 @@ class Geometry(object):
                 else:
                     cell.getMaterial(self.moderator)
                     #print "set cell %d, %d to %s " % (i, j, cell.region)
+        if tally_fuel_corner:
+            #define top right corner of fuel (1/4 of total fuel)
+            centerline = int(self.n_cells / 2)
+            fuel_outeredge = int(self.n_mod + self.n_fuel)
+            for i in range(centerline, fuel_outeredge):
+                for j in range(centerline, fuel_outeredge):
+                    cell = self.cells[i][j]
+                    self.top_right_corner_fuel.append(cell)
+                    #print "added cell at i = %g, j = %g to top right corner of fuel" %(i,j)
 
     def getWidth(self, width, spacing):
         return int(width / spacing)
@@ -56,9 +65,9 @@ class Cell(object):
 
         self.region = 'moderator'
         self.flux = 0
-        self.angular = np.zeros((4, 200))
+        self.angular = np.zeros((4, 400))
         self.source = 0
-        self.avg_angular = np.zeros(200)
+        self.avg_angular = np.zeros(400)
 
     def getMaterial(self, material):
         self.material = material

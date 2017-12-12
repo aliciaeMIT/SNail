@@ -7,13 +7,13 @@ import time
 #########################################
 ############# PROBLEM SETUP #############
 #########################################
-pitch = 1.24
+pitch = 1.6
 fwidth = 0.8                               #fuel width/height
-q_fuel = 1 / (4 * pi )                    #fuel source
+q_fuel = 10 / (4 * pi )                    #fuel source
 q_mod = 0.0                                #moderator source
 
 #convergence tolerance
-tol = 1e-7
+tol = 1e-6
 max_iters = 50
 
 #Sn order, mesh spacings
@@ -24,10 +24,12 @@ singlesolve = True
 manyspacings = False
 manyorders = False
 convergemesh = False
+update_source = True
+tally_fuel_corner = True
 
 if singlesolve:
-    order = 4
-    spacing = 0.01
+    order = 2
+    spacing = 0.1
 
 if manyspacings:
     order = 4
@@ -100,22 +102,28 @@ def solveSN(spacing, order, savepath):
 
     # setup mesh cells
     mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
-    mesh.setMesh()
+    mesh.setMesh(tally_fuel_corner)
 
     cell_width = mesh.getWidth(pitch, spacing)
     fuel_width = mesh.getWidth(fwidth, spacing)
     plot_cells = mesh.getPlotCells(cell_width, fuel_width)
     plotter.plotMaterial(mesh, spacing, plot_cells, savepath)
+    f.write("\nTotal number of mesh cells: \t%g" % (mesh.n_cells ** 2))
+    print "\nTotal number of mesh cells: \t%g" % (mesh.n_cells ** 2)
+    f.write("\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order))
+    print "\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order)
 
     # give order, mesh to solver
     solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area,
-                      mesh.mod_area, timestr)
-    solve.solveSN(max_iters, plotter, mesh, savepath)
+                      mesh.mod_area, timestr, mesh.top_right_corner_fuel)
+    solve.solveSN(max_iters, plotter, mesh, savepath, update_source)
 
     f.write(
-        "\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f\n\n"
-        % (solve.results[0], solve.results[1], solve.results[2], solve.results[3], solve.results[4]))
-    return solve.results[-1]
+        "\nConverged in %d iterations! \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
+        "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g"
+        % (solve.results[0], solve.results[1], solve.results[2], solve.results[3],
+           solve.results[4], solve.results[5], solve.results[5]/q_fuel))
+    return solve.results[4]
 
 def solveSpacings(spacings, order):
     ratio_old = 0
@@ -161,3 +169,7 @@ if manyorders:
     solveOrders(spacing, orders)
 if manyspacings:
     solveSpacings(spacings, order)
+
+f.close()
+
+plotter.saveInputFile(savepath)
