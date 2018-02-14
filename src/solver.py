@@ -225,10 +225,10 @@ class SN(object):
             getfluxes = list(self.getAvgScalarFlux())
             cornerflux = self.getCornerFlux()
             scalar_flux = getfluxes[:2]
-            self.results.append(iters)
-            for item in getfluxes:
-                self.results.append(item)
-            self.results.append(cornerflux)
+            #self.results.append(iters)
+            #for item in getfluxes:
+            #    self.results.append(item)
+            #self.results.append(cornerflux)
             #print "plotting scalar flux for iteration %d" % (iters)
 
             midpt = self.n_cells/2 - 1

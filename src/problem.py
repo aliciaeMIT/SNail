@@ -17,28 +17,28 @@ tol = 1e-6
 max_iters = 200
 
 #Sn order, mesh spacings
-orders = [2, 4, 8, 16, 24]
-spacings = [0.2, 0.16, 0.1, 0.08, 0.05, 0.04, 0.01]#[0.02, 0.01, 0.005, 0.004]
+orders = [4]
+spacings = [0.2, 0.1, 0.08, 0.05, 0.04, 0.02]
 
-getnumunknowns = True
+getnumunknowns = False
 singlesolve = False
 manyspacings = True
-manyorders = True
+manyorders = False
 convergemesh = False
 update_source = True
 tally_fuel_corner = True
 
 if singlesolve:
-    order = 2
-    spacing = 0.1
+    order = 4
+    spacing = 0.2
 
 if manyspacings:
-    order = 2
+    order = 4
     if convergemesh:
         sptol = 0.1  # percent change in flux ratio
 
 elif manyorders:
-    spacing = 0.01
+    spacing = 0.005
 
 #########################################
 ########## MATERIAL PROPERTIES ##########
@@ -92,15 +92,16 @@ f.write("cell pitch \t %g\nfuel width \t %g\nfuel source \t %g\nmod source \t %g
 f.write("converge tol \t %g\n\n" %(tol))
 f.write("fuel total xs \t %g\nmod total xs \t %g\nmod scatter xs \t %g\n\n"
         "*****************************\n\n" %(sigma_fuel, sigma_mod, sigma_mod_scatter))
-
+f.close()
 #########################################
 ################  SOLVE  ################
 #########################################
 
 def solveSN(spacing, order, savepath):
+    f = open('%s.txt' %resultsfile, 'a+')
     print "\nSolving SN, order %d, spacing %g" % (order, spacing)
     f.write("\nSolving SN, order %d, spacing %g" % (order, spacing))
-
+    f.write("\nTotal number of angles: \t%g" % (order * (order + 2) / 2))
     # setup mesh cells
     mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
     mesh.setMesh(tally_fuel_corner)
@@ -109,10 +110,10 @@ def solveSN(spacing, order, savepath):
     fuel_width = mesh.getWidth(fwidth, spacing)
     plot_cells = mesh.getPlotCells(cell_width, fuel_width)
     plotter.plotMaterial(mesh, spacing, plot_cells, savepath)
-    f.write("\nTotal number of mesh cells: \t%g" % (mesh.n_cells ** 2))
+    f.write("\n#ang\tcells\t#unkn\n%g\t%g\t%g\n" % ( order * (order + 2) / 2 , mesh.n_cells ** 2, (mesh.n_cells ** 2) * (order*(order+2)/2)))
     print "\nTotal number of mesh cells: \t%g" % (mesh.n_cells ** 2)
-    f.write("\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order))
-    print "\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order)
+    #f.write("\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * (order*(order+2)/2)))
+    print "\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * (order*(order+2)/2))
 
     # give order, mesh to solver
     solve = solver.SN(order, mesh.cells, spacing, mesh.n_cells, mesh.n_fuel, mesh.n_mod, tol, mesh.fuel_area,
@@ -120,25 +121,39 @@ def solveSN(spacing, order, savepath):
     SNresults = solve.solveSN(max_iters, plotter, mesh, savepath, update_source)
 
     if SNresults:
+        """
         f.write(
-            "\nConverged in %d iterations!\nL2 \t%g \nAvg fuel flux = %f \nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
-            "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g\n"
-            % (solve.results[0], solve.l2, solve.results[1], solve.results[2], solve.results[3],
-               solve.results[4], solve.results[5], solve.results[5]/q_fuel))
+            "\nAvg fuel flux \t %f \nAvg mod flux \t %f \nAverage Flux  \t %f \nFlux ratio \t %f"
+            "\nfuel corner flux\t %g\nCorner normalized\t %g\n\n"
+            "Converged in %d iterations! \tL2 \t%g \n"
+            % (  solve.results[1], solve.results[2], solve.results[3],
+               solve.results[4], solve.results[5], solve.results[5]/q_fuel, solve.results[0], solve.l2))
+        """
+        f.write(
+            "Avgfuelfl\t  Avgmodfl\t AvgFlux\t  "
+            "Fluxrat\t  cornerfl\t Corner_norm\t \n"
+            "%f\t%f\t%f\t%f\t%g\t%g\n\n\n"
+            "Converged in %d iterations! \tL2 \t%g \n"
+            % (solve.results[1], solve.results[2], solve.results[3],
+               solve.results[4], solve.results[5], solve.results[5] / q_fuel, solve.results[0], solve.l2))
+        #Corner flux over fuel source is normalized
         return solve.results[4]
+
     elif not SNresults:
         f.write("\n*********************************\n"
                 "Not converged after %d iterations. Rerun this case with more iterations. \nL2 \t%g" %(max_iters, solve.l2))
         f.write(
-            "\nAvg fuel flux = %f nAvg mod flux = %f \nAverage Flux  = %f \nFlux ratio = %f"
-            "\nTop right fuel corner flux\t %g\nCorner flux over fuel source\t %g\n"
+            "\nAvg fuel flux \t %f \nAvg mod flux \t %f \nAverage Flux  \t %f \nFlux ratio \t %f"
+            "\nfuel corner flux\t %g\nCorner normalized\t %g\n"
             "\n ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** * \n"
             % (solve.results[1], solve.results[2], solve.results[3],
                solve.results[4], solve.results[5], solve.results[5] / q_fuel))
+        f.close()
         return solve.results[4]
 
 
 def solveSpacings(spacings, order):
+    f = open('%s.txt' % resultsfile, 'a+')
     ratio_old = 0
     print "Iterating over spacings....\n\n"
     f.write("Iterating over spacings...\n\n")
@@ -159,8 +174,10 @@ def solveSpacings(spacings, order):
                 f.write("Spatial mesh is converged with spacing of %g" % (spacing))
                 break
         ratio_old = result
+    f.close()
 
 def solveOrders(spacing, orders):
+    f = open('%s.txt' % resultsfile, 'a+')
     ratio_old = 0
     print "Iterating over orders...\n\n"
     f.write("Iterating over orders...\n\n")
@@ -175,14 +192,17 @@ def solveOrders(spacing, orders):
         print "flux ratio change: %g" % (fluxchg)
         f.write("flux ratio change: %g\n\n\n" % (fluxchg))
         ratio_old = result
+    f.close()
 
 def getNumUnknowns(spacing, order):
     # setup mesh cells
+    f = open('%s.txt' % resultsfile, 'a+')
     mesh = geometry.Geometry(pitch, spacing, fwidth, fuel, moderator)
     mesh.setMesh(tally_fuel_corner)
     f.write("SN order\t%g\tspacing\t%g\tnum cells\t%g\tnum unknowns\t%g\n"
             % (order, spacing, (mesh.n_cells ** 2), (mesh.n_cells ** 2) * order))
     print "\nTotal number of unknowns: \t%g" % ((mesh.n_cells ** 2) * order)
+    f.close()
 
 if singlesolve:
     solveSN(spacing, order, savepath)
